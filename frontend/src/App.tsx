@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
+import { useAuthStore } from './store/useAuthStore';
+import { LoginPage } from './components/auth/LoginPage';
 import { RoomConfigurator } from './components/RoomConfigurator';
 import { CommissionPanel } from './components/CommissionPanel';
 import { SummaryPanel } from './components/SummaryPanel';
@@ -7,7 +10,7 @@ import { ConfigModal } from './components/ConfigModal';
 import { PrintLayout } from './components/PrintLayout';
 import { IntelligenceDashboard } from './components/intelligence/IntelligenceDashboard';
 import { ProjectList } from './components/projects/ProjectList';
-import { Home, Briefcase, Library, Brain, ChevronRight, Calculator } from 'lucide-react';
+import { Home, Briefcase, Library, Brain, ChevronRight, Calculator, LogOut, Loader2 } from 'lucide-react';
 import { useBudgetStore } from './store/useBudgetStore';
 
 type AppPage = 'orcamentos' | 'inteligencia' | 'projetos'
@@ -21,11 +24,40 @@ const STEPS = [
 function App() {
   const [activePage, setActivePage] = useState<AppPage>('orcamentos')
   const [activeStep, setActiveStep] = useState(1);
+  const { user, isLoading, setAuth, signOut } = useAuthStore();
   const { printMode } = useBudgetStore();
+
+  useEffect(() => {
+    // 1. Initial Session Check
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuth(session?.user ?? null, session ?? null);
+    });
+
+    // 2. Auth State Listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuth(session?.user ?? null, session ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setAuth]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeStep, activePage]);
+
+  // Loading State
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  // Not Authenticated -> Show LoginPage
+  if (!user) {
+    return <LoginPage />;
+  }
 
   return (
     <>
@@ -45,7 +77,7 @@ function App() {
           <nav className="flex items-center bg-white/10 rounded-full p-1 gap-1">
             <button
               onClick={() => setActivePage('orcamentos')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${
+              className={`flex items-center gap-2 px-1.5 sm:px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${
                 activePage === 'orcamentos'
                   ? 'bg-white text-primary shadow-sm'
                   : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -56,7 +88,7 @@ function App() {
             </button>
             <button
               onClick={() => setActivePage('projetos')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${
+              className={`flex items-center gap-2 px-1.5 sm:px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${
                 activePage === 'projetos'
                   ? 'bg-white text-primary shadow-sm'
                   : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -67,7 +99,7 @@ function App() {
             </button>
             <button
               onClick={() => setActivePage('inteligencia')}
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${
+              className={`flex items-center gap-2 px-1.5 sm:px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${
                 activePage === 'inteligencia'
                   ? 'bg-white text-primary shadow-sm'
                   : 'text-white/70 hover:text-white hover:bg-white/10'
@@ -79,9 +111,16 @@ function App() {
           </nav>
 
           <div className="flex items-center space-x-4">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-primary-foreground font-bold bg-white/20 px-3 py-1.5 rounded-full hidden sm:block shadow-sm">
-              Restrito / Confidencial
+            <div className="text-[10px] uppercase tracking-[0.2em] text-primary-foreground font-bold bg-white/20 px-3 py-1.5 rounded-full hidden lg:block shadow-sm">
+              {user.email}
             </div>
+            <button 
+              onClick={() => signOut()}
+              className="p-2 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+              title="Sair do Sistema"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
             <div className="h-6 w-px bg-white/30 hidden sm:block"></div>
             <ConfigModal />
           </div>
