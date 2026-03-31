@@ -194,7 +194,7 @@ export function DNADrawer({ open, onClose }: DNADrawerProps) {
 
               {similar.map(({ project, score, reasons }, idx) => {
                 const deviationPct = project.totalPriceCost > 0
-                  ? ((project.totalActualCost - project.totalPriceCost) / project.totalPriceCost) * 100
+                  ? (((project.totalActualCost ?? 0) - project.totalPriceCost) / project.totalPriceCost) * 100
                   : 0
 
                 // Barra de score: accent-intel para alta, primary para média, border para baixa
@@ -212,11 +212,6 @@ export function DNADrawer({ open, onClose }: DNADrawerProps) {
                         <span className="text-2xl">{MEDALS[idx]}</span>
                         <div>
                           <p className="font-black text-foreground">{project.name}</p>
-                          {project.isMocked && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-200">
-                              <FlaskConical className="w-2.5 h-2.5" /> dados estimados
-                            </span>
-                          )}
                         </div>
                       </div>
                       <div className="text-right">
@@ -272,7 +267,7 @@ export function DNADrawer({ open, onClose }: DNADrawerProps) {
                       </div>
                       <div>
                         <p className="text-[9px] text-foreground/40 uppercase tracking-wider font-bold mb-1">CMV Real</p>
-                        <p className="text-sm font-black text-foreground">{formatCurrency(project.totalActualCost)}</p>
+                        <p className="text-sm font-black text-foreground">{formatCurrency(project.totalActualCost ?? 0)}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-[9px] text-foreground/40 uppercase tracking-wider font-bold mb-1">Desvio</p>
