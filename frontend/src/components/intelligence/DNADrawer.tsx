@@ -1,5 +1,5 @@
 import { useMemo, useEffect } from 'react'
-import { X, Dna, TrendingUp, TrendingDown, Minus, FlaskConical, Info } from 'lucide-react'
+import { X, Dna, TrendingUp, TrendingDown, Minus, Info } from 'lucide-react'
 import { useBudgetStore, LANAI_PRICES } from '../../store/useBudgetStore'
 import { getSimilarProjects } from '../../lib/intelligence'
 import { formatCurrency } from '../../lib/utils'
