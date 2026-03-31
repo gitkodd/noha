@@ -12,13 +12,28 @@ import {
   AlertCircle,
   Clock,
   Package,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export function ProjectList() {
-  const { projects, selectedProjectId, setSelectedProject, getProjectById, getGlobalStats } = useProjectStore();
+  const { 
+    projects, 
+    selectedProjectId, 
+    setSelectedProject, 
+    getProjectById, 
+    getGlobalStats,
+    isLoading,
+    fetchProjects 
+  } = useProjectStore();
+  
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Carregar projetos do Supabase ao montar o componente
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
   
   const stats = getGlobalStats();
   const selectedProject = selectedProjectId ? getProjectById(selectedProjectId) : null;
@@ -27,47 +42,57 @@ export function ProjectList() {
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (isLoading && projects.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 space-y-4">
+        <Loader2 className="w-10 h-10 text-primary animate-spin" />
+        <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Conectando ao Noha Cloud...</p>
+      </div>
+    );
+  }
+
   if (selectedProject) {
     return <ProjectDetailView project={selectedProject} onBack={() => setSelectedProject(null)} />;
   }
 
+
   return (
     <div className="space-y-8">
-      {/* Header com Stats */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
+      {/* Header com Stats integradas */}
+      <div className="flex flex-col gap-1">
+        <div className="flex items-end justify-between gap-4">
           <h2 className="text-3xl font-black tracking-tight text-slate-900">Central de Projetos</h2>
-          <p className="text-slate-500 mt-2">Dados históricos integrados da Noha 2.0</p>
-        </div>
-
-        <div className="flex gap-4">
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm min-w-[140px]">
-            <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Total</p>
-            <p className="text-2xl font-black text-slate-900">{stats.totalProjects}</p>
+          <div className="flex items-center gap-6 pb-1">
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Total</p>
+              <p className="text-xl font-black text-slate-900">{stats.totalProjects}</p>
+            </div>
+            <div className="w-px h-8 bg-slate-200" />
+            <div className="text-right">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Acurácia Média</p>
+              <p className={`text-xl font-black ${stats.avgAccuracy < 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                {stats.avgAccuracy.toFixed(1)}%
+              </p>
+            </div>
           </div>
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm min-w-[140px]">
-            <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">Acurácia Média</p>
-            <p className={`text-2xl font-black ${stats.avgAccuracy < 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
-              {stats.avgAccuracy.toFixed(1)}%
-            </p>
-          </div>
         </div>
+        <p className="text-slate-500">Dados históricos integrados da Noha 2.0</p>
       </div>
 
       {/* Busca */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+      <div className="relative max-w-xl">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input 
           type="text"
           placeholder="Buscar projeto por nome..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white border border-slate-200 rounded-2xl py-4 pl-12 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+          className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
         />
       </div>
 
-      {/* Grid de Projetos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Grid de Projetos — 2 colunas: mais equilibrado independente do número de projetos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {filteredProjects.map((project) => {
           const deviation = ((project.totalActual / project.totalPrice) - 1) * 100;
           const isEfficient = deviation <= 0;
@@ -154,13 +179,13 @@ function ProjectDetailView({ project, onBack }: { project: Project, onBack: () =
         </button>
 
         <div className="bg-white border border-slate-200 px-4 py-2 rounded-full flex items-center gap-3 shadow-sm">
-          <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+          <div className="w-2 h-2 rounded-full bg-accent-intel"></div>
           <span className="text-[10px] font-black uppercase text-slate-900 tracking-tighter">Dados Verificados — BD1</span>
         </div>
       </div>
 
-      {/* Hero Stats */}
-      <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl shadow-slate-900/20">
+      {/* Hero Stats — tom quente stone, coerente com SummaryPanel */}
+      <div className="bg-gradient-to-br from-stone-800 to-stone-900 rounded-[2.5rem] p-8 md:p-12 text-white relative overflow-hidden shadow-2xl shadow-stone-900/20">
         <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-4xl md:text-5xl font-black mb-6 tracking-tight leading-tight">{project.name}</h1>

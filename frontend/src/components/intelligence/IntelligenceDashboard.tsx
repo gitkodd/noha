@@ -10,12 +10,13 @@ import type { CategoryRisk } from '../../lib/intelligence'
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function riskColor(deviation: number) {
-  // dev < 0 = Economia (Azul/Verde)
-  // dev > 0 = Gasto Extra (Amarelo/Vermelho)
+  // 3 estados simples e intuitivos:
+  // rose  → desvio alto positivo (gastou muito acima do orçado) = RISCO
+  // amber → desvio positivo moderado (levemente acima)          = ATENÇÃO
+  // emerald → qualquer desvio negativo (abaixo do orçado)       = SAUDÁVEL
   if (deviation > 20) return { bg: 'bg-rose-50', text: 'text-rose-700', bar: 'bg-rose-500', border: 'border-rose-200' }
-  if (deviation > 0) return { bg: 'bg-amber-50', text: 'text-amber-700', bar: 'bg-amber-400', border: 'border-amber-200' }
-  if (deviation > -10) return { bg: 'bg-emerald-50', text: 'text-emerald-700', bar: 'bg-emerald-500', border: 'border-emerald-200' }
-  return { bg: 'bg-sky-50', text: 'text-sky-700', bar: 'bg-sky-500', border: 'border-sky-200' }
+  if (deviation > 0)  return { bg: 'bg-amber-50', text: 'text-amber-700', bar: 'bg-amber-400', border: 'border-amber-200' }
+  return { bg: 'bg-emerald-50', text: 'text-emerald-700', bar: 'bg-emerald-500', border: 'border-emerald-200' }
 }
 
 function DeviationBar({ deviation }: { deviation: number }) {
@@ -126,14 +127,14 @@ export function IntelligenceDashboard() {
           label="Quarto Temático"
           value={formatCurrency(kpis.thematicRoomAvgCost)}
           sub="custo médio / unidade"
-          color="emerald"
+          color="intel"
         />
         <KPICard
           icon={Layers}
-          label="Quarto Adulto"
+          label="Quarto Normal"
           value={formatCurrency(kpis.adultRoomAvgCost)}
           sub="custo médio / unidade"
-          color="amber"
+          color="intel"
         />
       </div>
 
@@ -222,7 +223,7 @@ export function IntelligenceDashboard() {
                     {cat.avgDeviation > 15 && '⚠️ Variação crítica — Exige buffer de segurança'}
                     {cat.avgDeviation > 0 && cat.avgDeviation <= 15 && '🟡 Gasto levemente acima do orçado'}
                     {cat.avgDeviation <= 0 && cat.avgDeviation > -10 && '✅ Performance estável dentro da margem'}
-                    {cat.avgDeviation <= -10 && '🔵 Margem alta — Custo real significativamente menor'}
+                    {cat.avgDeviation <= -10 && '✅ Margem alta — Custo real abaixo do orçado'}
                   </p>
                 </div>
               )

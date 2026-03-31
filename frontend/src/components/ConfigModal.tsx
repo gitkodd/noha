@@ -21,7 +21,7 @@ export function ConfigModal() {
         const standardRate = s.decorationPercent;
         migrated.decorationPercent = {
           'Quarto Temático': standardRate,
-          'Quarto Adulto': standardRate,
+          'Quarto Normal': standardRate,
           'Loft': standardRate,
           'Garagem': standardRate,
           'Cinema': standardRate,

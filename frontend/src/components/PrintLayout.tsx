@@ -1,37 +1,58 @@
-import { useBudgetStore, LANAI_PRICES, type TierType } from '../store/useBudgetStore'
+import { useBudgetStore, LANAI_PRICES, type TierType, type RoomType, DEFAULT_ROOM_BASE_PRICES } from '../store/useBudgetStore'
 import { formatCurrency } from '../lib/utils'
 
 export function PrintLayout({ mode }: { mode: 'client' | 'internal' | null }) {
   const { rooms, lanai, commissions, globalSettings } = useBudgetStore()
   if (!mode) return null
 
-  const getTierFactor = (tier: TierType) => {
-    if (tier === 'basic') return globalSettings.tierBasic / 100
-    if (tier === 'premium') return globalSettings.tierPremium / 100
-    return 0
+  const calculateRoomValue = (type: RoomType, tier: TierType) => {
+    const base = globalSettings.roomBasePrices[type] || DEFAULT_ROOM_BASE_PRICES[type] || 0
+    let factor = 0
+    if (tier === 'basic') factor = -Math.abs(globalSettings.tierBasic) / 100
+    if (tier === 'premium') factor = Math.abs(globalSettings.tierPremium) / 100
+    
+    return base * (1 + factor)
   }
-  
+
   let roomsTotal = 0
   rooms.forEach(r => {
-    const base = globalSettings.roomBasePrices[r.type] * (1 + getTierFactor(r.tier))
-    roomsTotal += base * r.quantity
+    const val = (r.customPrice !== undefined && r.customPrice !== null) ? r.customPrice : calculateRoomValue(r.type, r.tier)
+    roomsTotal += val * r.quantity
   })
 
   let lanaiTotal = 0
-  if (lanai.telao) lanaiTotal += LANAI_PRICES.telao
-  if (lanai.summerKitchen) lanaiTotal += LANAI_PRICES.summerKitchen
-  if (lanai.telaPrivacidade) lanaiTotal += LANAI_PRICES.telaPrivacidade
+  if (lanai.telao) lanaiTotal += (lanai.telaoCustomPrice ?? LANAI_PRICES.telao)
+  if (lanai.summerKitchen) lanaiTotal += (lanai.summerKitchenCustomPrice ?? LANAI_PRICES.summerKitchen)
+  if (lanai.telaPrivacidade) lanaiTotal += (lanai.telaPrivacidadeCustomPrice ?? LANAI_PRICES.telaPrivacidade)
 
-  const rawCmv = roomsTotal + lanaiTotal
+  // Calcule Decoration Total (idêntico ao SummaryPanel)
+  let decorationTotal = 0
+  rooms.forEach(room => {
+    const val = (room.customPrice !== undefined && room.customPrice !== null) 
+      ? room.customPrice 
+      : calculateRoomValue(room.type, room.tier)
+    const roomTotal = val * room.quantity
+    const decRate = (globalSettings.decorationPercent[room.type] || 0) / 100
+    decorationTotal += (roomTotal * decRate)
+  })
+
+  const rawCmv = roomsTotal + lanaiTotal + decorationTotal
   const rates = globalSettings.commissionRates || { markup: 40, ingrid: 10, corretor: 10, tati: 2, indicacao: 5 }
   
   const markupValue = commissions.markup.enabled ? (rawCmv * rates.markup) / 100 : 0
-  const indicacaoValue = commissions.indicacao.enabled ? (rawCmv * rates.indicacao) / 100 : 0
-  const sellPrice = rawCmv + markupValue + indicacaoValue
+  const subtotal = rawCmv + markupValue + (commissions.ingrid.enabled ? (rawCmv * rates.ingrid / 100) : 0)
 
-  const ingridValue = commissions.ingrid.enabled ? (sellPrice * rates.ingrid) / 100 : 0
+  let deductions = 0
+  if (commissions.corretor.enabled) deductions += (rates.corretor / 100)
+  if (commissions.tati.enabled) deductions += (rates.tati / 100)
+  if (commissions.indicacao.enabled) deductions += (rates.indicacao / 100)
+
+  const sellPrice = deductions < 1 ? subtotal / (1 - deductions) : 0
+
+  const ingridValue = commissions.ingrid.enabled ? (rawCmv * rates.ingrid) / 100 : 0
   const corretorValue = commissions.corretor.enabled ? (sellPrice * rates.corretor) / 100 : 0
   const tatiValue = commissions.tati.enabled ? (sellPrice * rates.tati) / 100 : 0
+  const indicacaoValue = commissions.indicacao.enabled ? (sellPrice * rates.indicacao) / 100 : 0
 
   return (
     <div className="hidden print:block w-full text-slate-900 bg-white min-h-screen p-8 absolute top-0 left-0 z-50">
@@ -53,7 +74,7 @@ export function PrintLayout({ mode }: { mode: 'client' | 'internal' | null }) {
         {rooms.map(room => (
           <div key={room.id} className="flex justify-between py-2 border-b border-slate-100 text-sm">
              <span><span className="font-semibold">{room.quantity}x</span> {room.type} (Tier: {room.tier})</span>
-             {mode === 'internal' && <span>{formatCurrency((globalSettings.roomBasePrices[room.type] * (1 + getTierFactor(room.tier))) * room.quantity)}</span>}
+             {mode === 'internal' && <span>{formatCurrency(calculateRoomValue(room.type, room.tier) * room.quantity)}</span>}
           </div>
         ))}
         {lanaiTotal > 0 && (
@@ -69,13 +90,13 @@ export function PrintLayout({ mode }: { mode: 'client' | 'internal' | null }) {
           <h2 className="text-lg font-bold mb-4">Margens Internas & Fees</h2>
           <div className="flex justify-between py-1 text-sm"><span className="text-slate-600">Custo Base Agregado (CMV)</span><span className="font-medium">{formatCurrency(rawCmv)}</span></div>
           {commissions.markup.enabled && <div className="flex justify-between py-1 text-sm"><span className="text-slate-600">Markup Corporativo ({rates.markup}%)</span><span className="font-medium text-emerald-600">+{formatCurrency(markupValue)}</span></div>}
-          {commissions.indicacao.enabled && <div className="flex justify-between py-1 text-sm"><span className="text-slate-600">Indicação Projeto ({rates.indicacao}%)</span><span className="font-medium text-emerald-600">+{formatCurrency(indicacaoValue)}</span></div>}
+          {commissions.ingrid.enabled && <div className="flex justify-between py-1 text-sm"><span className="text-slate-600">Fee de Projeto ({rates.ingrid}%)</span><span className="font-medium text-emerald-600">+{formatCurrency(ingridValue)}</span></div>}
           
           <div className="my-3 border-t border-slate-200"></div>
           
-          {commissions.ingrid.enabled && <div className="flex justify-between py-1 text-sm"><span className="text-slate-600">Fee de Projeto ({rates.ingrid}%)</span><span className="font-medium text-rose-600">-{formatCurrency(ingridValue)}</span></div>}
           {commissions.corretor.enabled && <div className="flex justify-between py-1 text-sm"><span className="text-slate-600">Corretagem Base ({rates.corretor}%)</span><span className="font-medium text-rose-600">-{formatCurrency(corretorValue)}</span></div>}
           {commissions.tati.enabled && <div className="flex justify-between py-1 text-sm"><span className="text-slate-600">Fee Operacional ({rates.tati}%)</span><span className="font-medium text-rose-600">-{formatCurrency(tatiValue)}</span></div>}
+          {commissions.indicacao.enabled && <div className="flex justify-between py-1 text-sm"><span className="text-slate-600">Indicação ({rates.indicacao}%)</span><span className="font-medium text-rose-600">-{formatCurrency(indicacaoValue)}</span></div>}
         </div>
       )}
 
@@ -85,6 +106,30 @@ export function PrintLayout({ mode }: { mode: 'client' | 'internal' | null }) {
            <p className="text-slate-400 text-sm mt-1">Valor estimado para entrega Turn-Key.</p>
          </div>
          <div className="text-3xl font-black">{formatCurrency(sellPrice)}</div>
+      </div>
+      
+      <div className="mt-8 p-6 border-2 border-slate-100 rounded-2xl">
+        <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">Condições de Pagamento</h3>
+        <div className="grid grid-cols-2 gap-8 text-sm">
+          <div>
+            <p className="text-slate-500 mb-1">Entrada (Ato)</p>
+            <p className="font-bold text-lg text-slate-900">50% — {formatCurrency(sellPrice * 0.5)}</p>
+          </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <span className="text-slate-500">Parcela 02 (30 dias) - 20%</span>
+              <span className="font-semibold text-slate-900">{formatCurrency(sellPrice * 0.2)}</span>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <span className="text-slate-500">Parcela 03 (60 dias) - 20%</span>
+              <span className="font-semibold text-slate-900">{formatCurrency(sellPrice * 0.2)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500">Parcela 04 (90 dias) - 10%</span>
+              <span className="font-semibold text-slate-900">{formatCurrency(sellPrice * 0.1)}</span>
+            </div>
+          </div>
+        </div>
       </div>
       
       <div className="mt-16 text-center text-xs text-slate-400">

@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type RoomType = 'Quarto Temático' | 'Quarto Adulto' | 'Loft' | 'Garagem' | 'Cinema' | 'Delphino'
+export type RoomType = 'Quarto Temático' | 'Quarto Normal' | 'Loft' | 'Garagem' | 'Cinema' | 'Delphino'
 export type TierType = 'basic' | 'intermediario' | 'premium'
 
 export const DEFAULT_ROOM_BASE_PRICES: Record<RoomType, number> = {
   'Quarto Temático': 12000,
-  'Quarto Adulto': 4000,
+  'Quarto Normal': 4000,
   'Loft': 14000,
   'Garagem': 18000,
   'Cinema': 18000,
@@ -15,7 +15,7 @@ export const DEFAULT_ROOM_BASE_PRICES: Record<RoomType, number> = {
 
 export const ROOM_HISTORY: Record<RoomType, number | null> = {
   'Quarto Temático': 11804,
-  'Quarto Adulto': 3879,
+  'Quarto Normal': 3879,
   'Loft': 13990,
   'Garagem': 17189,
   'Cinema': 17189,
@@ -26,6 +26,12 @@ export const LANAI_PRICES = {
   telao: 12500,
   summerKitchen: 6000,
   telaPrivacidade: 3000,
+}
+
+export const LANAI_HISTORY = {
+  telao: 11805,
+  summerKitchen: 5789,
+  telaPrivacidade: 2890,
 }
 
 export interface RoomItem {
@@ -40,6 +46,9 @@ export interface LanaiOptions {
   telao: boolean;
   summerKitchen: boolean;
   telaPrivacidade: boolean;
+  telaoCustomPrice?: number | null;
+  summerKitchenCustomPrice?: number | null;
+  telaPrivacidadeCustomPrice?: number | null;
 }
 
 export interface CommissionSettings {
@@ -75,10 +84,11 @@ export interface BudgetState {
   printMode: 'client' | 'internal' | null;
   
   // Actions
-  addRoom: (type: RoomType) => void;
+  addRoom: (type: RoomType, id?: string) => void;
   updateRoom: (id: string, updates: Partial<RoomItem>) => void;
   removeRoom: (id: string) => void;
   toggleLanai: (item: keyof LanaiOptions) => void;
+  updateLanaiPrice: (item: keyof LanaiOptions, price: number | null) => void;
   updateCommission: (key: keyof CommissionSettings, enabled?: boolean) => void;
   toggleHistory: () => void;
   setPrintMode: (mode: 'client' | 'internal' | null) => void;
@@ -94,7 +104,7 @@ export const useBudgetStore = create<BudgetState>()(
         tierPremium: 15,
         decorationPercent: {
           'Quarto Temático': 5,
-          'Quarto Adulto': 5,
+          'Quarto Normal': 5,
           'Loft': 5,
           'Garagem': 5,
           'Cinema': 5,
@@ -114,6 +124,9 @@ export const useBudgetStore = create<BudgetState>()(
         telao: false,
         summerKitchen: false,
         telaPrivacidade: false,
+        telaoCustomPrice: null,
+        summerKitchenCustomPrice: null,
+        telaPrivacidadeCustomPrice: null,
       },
       commissions: {
         markup: { enabled: true },
@@ -125,8 +138,8 @@ export const useBudgetStore = create<BudgetState>()(
       showHistory: true,
       printMode: null,
 
-      addRoom: (type) => set((state) => ({
-        rooms: [...state.rooms, { id: crypto.randomUUID(), type, tier: 'intermediario', quantity: 1 }]
+      addRoom: (type, id) => set((state) => ({
+        rooms: [...state.rooms, { id: id || crypto.randomUUID(), type, tier: 'intermediario', quantity: 1 }]
       })),
       
       updateRoom: (id, updates) => set((state) => ({
@@ -139,6 +152,10 @@ export const useBudgetStore = create<BudgetState>()(
 
       toggleLanai: (item) => set((state) => ({
         lanai: { ...state.lanai, [item]: !state.lanai[item] }
+      })),
+
+      updateLanaiPrice: (item, price) => set((state) => ({
+        lanai: { ...state.lanai, [item]: price }
       })),
 
       updateCommission: (key, enabled) => set((state) => ({

@@ -48,7 +48,7 @@ export function DNADrawer({ open, onClose }: DNADrawerProps) {
 
   const config = useMemo(() => {
     const thematicCount = rooms.filter(r => r.type === 'Quarto Temático').reduce((s, r) => s + r.quantity, 0)
-    const adultCount = rooms.filter(r => r.type === 'Quarto Adulto').reduce((s, r) => s + r.quantity, 0)
+    const adultCount = rooms.filter(r => r.type === 'Quarto Normal').reduce((s, r) => s + r.quantity, 0)
     const loftCount = rooms.filter(r => r.type === 'Loft').reduce((s, r) => s + r.quantity, 0)
     const gameRoomCount = rooms.filter(r => r.type === 'Garagem' || r.type === 'Cinema').reduce((s, r) => s + r.quantity, 0)
     const hasLanai = lanai.telao || lanai.summerKitchen || lanai.telaPrivacidade

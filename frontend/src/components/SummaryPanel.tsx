@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Card, CardContent } from './ui/Card'
-import { useBudgetStore, LANAI_PRICES, type TierType } from '../store/useBudgetStore'
+import { useBudgetStore, LANAI_PRICES, DEFAULT_ROOM_BASE_PRICES, type TierType } from '../store/useBudgetStore'
 import { formatCurrency } from '../lib/utils'
 import { DNADrawer } from './intelligence/DNADrawer'
 import { Dna } from 'lucide-react'
@@ -37,7 +37,7 @@ export function SummaryPanel() {
       if (room.customPrice !== undefined && room.customPrice !== null) {
         current = room.customPrice;
       } else {
-        const base = globalSettings.roomBasePrices[room.type]
+        const base = globalSettings.roomBasePrices[room.type] || DEFAULT_ROOM_BASE_PRICES[room.type] || 0
         current = base * (1 + getTierFactor(room.tier))
       }
       return acc + (current * room.quantity)
@@ -49,19 +49,19 @@ export function SummaryPanel() {
       if (room.customPrice !== undefined && room.customPrice !== null) {
         current = room.customPrice;
       } else {
-        const base = globalSettings.roomBasePrices[room.type]
+        const base = globalSettings.roomBasePrices[room.type] || DEFAULT_ROOM_BASE_PRICES[room.type] || 0
         current = base * (1 + getTierFactor(room.tier))
       }
       const roomTotal = current * room.quantity
-      const decRate = globalSettings.decorationPercent[room.type] / 100
+      const decRate = (globalSettings.decorationPercent[room.type] || 0) / 100
       return acc + (roomTotal * decRate)
     }, 0)
 
-    // 3. Lanai
+    // 3. Lanai (opções toggleadas separadamente)
     let lTotal = 0
-    if (lanai.telao) lTotal += LANAI_PRICES.telao
-    if (lanai.summerKitchen) lTotal += LANAI_PRICES.summerKitchen
-    if (lanai.telaPrivacidade) lTotal += LANAI_PRICES.telaPrivacidade
+    if (lanai.telao) lTotal += (lanai.telaoCustomPrice ?? LANAI_PRICES.telao)
+    if (lanai.summerKitchen) lTotal += (lanai.summerKitchenCustomPrice ?? LANAI_PRICES.summerKitchen)
+    if (lanai.telaPrivacidade) lTotal += (lanai.telaPrivacidadeCustomPrice ?? LANAI_PRICES.telaPrivacidade)
 
     // 4. CMV
     const cmvValue = rTotal + dec + lTotal
@@ -132,11 +132,13 @@ export function SummaryPanel() {
             <span className="tracking-wide">Decoração (Variável)</span>
             <span>{formatCurrency(decoration)}</span>
           </div>
-          <div className="flex justify-between text-white/60 hover:text-white transition-colors">
-            <span className="tracking-wide">Lanai</span>
-            <span>{formatCurrency(lanaiTotal)}</span>
-          </div>
-          <div className="flex justify-between font-semibold text-emerald-400 pt-3 border-t border-white/10">
+          {lanaiTotal > 0 && (
+            <div className="flex justify-between text-white/60 hover:text-white transition-colors">
+              <span className="tracking-wide">Lanai</span>
+              <span>{formatCurrency(lanaiTotal)}</span>
+            </div>
+          )}
+          <div className="flex justify-between font-semibold text-accent-intel pt-3 border-t border-white/10">
             <span className="tracking-widest uppercase text-xs">Custos Estruturais CMV</span>
             <span>{formatCurrency(cmv)}</span>
           </div>

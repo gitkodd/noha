@@ -8,8 +8,8 @@ const THEMATIC_KEYWORDS = [
   'star wars', 'batman', 'spider', 'hulk', 'moana', 'encanto',
 ]
 
-const ADULT_KEYWORDS = [
-  'master', 'bege', 'cinza', 'gray', 'beige', 'adulto',
+const NORMAL_KEYWORDS = [
+  'master', 'bege', 'cinza', 'gray', 'beige', 'adulto', 'normal',
 ]
 
 const GAME_ROOM_KEYWORDS = [
@@ -37,12 +37,12 @@ export function classifyRoom(ambientName: string): RoomType | 'area_social' | 'b
   if (BATHROOM_KEYWORDS.some(k => lower.includes(k))) return 'banheiro'
   if (SOCIAL_KEYWORDS.some(k => lower.includes(k))) return 'area_social'
 
-  // Bedroom: precisa determinar se temático ou adulto
+  // Bedroom: precisa determinar se temático ou normal
   if (lower.includes('bedroom') || lower.includes('quarto')) {
     if (THEMATIC_KEYWORDS.some(k => lower.includes(k))) return 'Quarto Temático'
-    if (ADULT_KEYWORDS.some(k => lower.includes(k))) return 'Quarto Adulto'
-    // Bedroom sem indicador claro → adulto (mais conservador)
-    return 'Quarto Adulto'
+    if (NORMAL_KEYWORDS.some(k => lower.includes(k))) return 'Quarto Normal'
+    // Bedroom sem indicador claro → normal (mais conservador)
+    return 'Quarto Normal'
   }
 
   if (lower.includes('extra')) return 'extras'
@@ -52,5 +52,5 @@ export function classifyRoom(ambientName: string): RoomType | 'area_social' | 'b
 
 /** Verifica se o tipo é um cômodo que entra no orçamento principal. */
 export function isBillableRoom(type: string): type is RoomType {
-  return ['Quarto Temático', 'Quarto Adulto', 'Loft', 'Garagem', 'Cinema', 'Delphino'].includes(type)
+  return ['Quarto Temático', 'Quarto Normal', 'Loft', 'Garagem', 'Cinema', 'Delphino'].includes(type)
 }

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { RoomConfigurator } from './components/RoomConfigurator';
-import { LanaiOptions } from './components/LanaiOptions';
 import { CommissionPanel } from './components/CommissionPanel';
 import { SummaryPanel } from './components/SummaryPanel';
 import { ApprovalStep } from './components/ApprovalStep';
@@ -8,16 +7,15 @@ import { ConfigModal } from './components/ConfigModal';
 import { PrintLayout } from './components/PrintLayout';
 import { IntelligenceDashboard } from './components/intelligence/IntelligenceDashboard';
 import { ProjectList } from './components/projects/ProjectList';
-import { Home, Trees, Briefcase, Library, Brain, ChevronRight, Calculator } from 'lucide-react';
+import { Home, Briefcase, Library, Brain, ChevronRight, Calculator } from 'lucide-react';
 import { useBudgetStore } from './store/useBudgetStore';
 
 type AppPage = 'orcamentos' | 'inteligencia' | 'projetos'
 
 const STEPS = [
   { id: 1, label: 'Ambientes\nBase', icon: Home },
-  { id: 2, label: 'Amenities\n& Lanai', icon: Trees },
-  { id: 3, label: 'Políticas\nComerciais', icon: Briefcase },
-  { id: 4, label: 'Aprovação\n& Mix', icon: Library },
+  { id: 2, label: 'Políticas\nComerciais', icon: Briefcase },
+  { id: 3, label: 'Aprovação\n& Mix', icon: Library },
 ]
 
 function App() {
@@ -148,9 +146,8 @@ function App() {
 
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
                 {activeStep === 1 && <RoomConfigurator />}
-                {activeStep === 2 && <LanaiOptions />}
-                {activeStep === 3 && <CommissionPanel />}
-                {activeStep === 4 && <ApprovalStep />}
+                {activeStep === 2 && <CommissionPanel />}
+                {activeStep === 3 && <ApprovalStep />}
               </div>
 
               {/* Navegação entre steps */}
@@ -162,9 +159,9 @@ function App() {
                 >
                   Voltar
                 </button>
-                {activeStep < 4 ? (
+                {activeStep < 3 ? (
                   <button
-                    onClick={() => setActiveStep(Math.min(4, activeStep + 1))}
+                    onClick={() => setActiveStep(Math.min(3, activeStep + 1))}
                     className="px-8 py-2.5 rounded-full bg-slate-900 text-white font-medium hover:bg-black shadow-md shadow-slate-900/10 transition-all flex items-center gap-2 group"
                   >
                     Prosseguir para {STEPS[activeStep].label.split('\n')[0]} <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

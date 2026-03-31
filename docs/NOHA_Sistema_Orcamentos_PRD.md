@@ -51,10 +51,10 @@ Cada cômodo pode ser configurado em três níveis que ajustam o valor proporcio
 #### 2.1.3 Decoração
 A decoração é calculada automaticamente como **5% do valor total dos cômodos**. Esse valor cobre itens decorativos gerais que são proporcionais ao tamanho e nível do projeto. Não é um item selecionável; aparece no resumo como linha automática.
 
-#### 2.1.4 Lanai
-Itens opcionais da área externa, selecionáveis via checkbox:
-- Telão: $12,500
-- Summer Kitchen: $6,000
+#### 2.1.4 Lanai (Módulo Especial de Amenities)
+O Lanai é tratado como um módulo especial de área externa, configurável diretamente no primeiro passo do orçador. Diferente dos cômodos comuns, ele possui itens opcionais de custo fixo:
+- Telão Integrado: $12,500
+- Summer Kitchen Premium: $6,000
 - Tela de Privacidade: $3,000
 
 #### 2.1.5 Overrides de Preço (Custom Price)
@@ -269,7 +269,9 @@ O que já está implementado e funcional:
 - Configurador de projeto com cômodos e quantidades
 - Três tiers de acabamento por cômodo (Basic, Padrão, Premium)
 - Override financeiro (Custom Price por cômodo)
-- Decoração automática (5%) e painel de opções Lanai
+- Decoração automática (5%)
+- **Módulo Lanai Integrado (Passo 1):** Seleção de amenities externas inline
+- **Wizard Otimizado (3 Passos):** Fluxo reduzido para Configuração → Políticas → Aprovação
 - Comissões e markup ativáveis com percentuais editáveis
 - Painel Histórico (M3) cruzando médias com valores em tempo real
 - Sistema de combos (criar, editar, carregar, excluir)
