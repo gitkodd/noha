@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from 'react'
 import { X, Dna, TrendingUp, TrendingDown, Minus, Info } from 'lucide-react'
-import { useBudgetStore, LANAI_PRICES } from '../../store/useBudgetStore'
+import { useBudgetStore, LANAI_PRICES, DEFAULT_ROOM_BASE_PRICES, type RoomType } from '../../store/useBudgetStore'
 import { getSimilarProjects } from '../../lib/intelligence'
 import { formatCurrency } from '../../lib/utils'
 
@@ -53,7 +53,7 @@ export function DNADrawer({ open, onClose }: DNADrawerProps) {
     const gameRoomCount = rooms.filter(r => r.type === 'Garagem' || r.type === 'Cinema').reduce((s, r) => s + r.quantity, 0)
     const hasLanai = lanai.telao || lanai.summerKitchen || lanai.telaPrivacidade
     const estimatedCMV = rooms.reduce((sum, room) => {
-      const base = globalSettings.roomBasePrices[room.type]
+      const base = globalSettings.roomBasePrices[room.type as RoomType] || DEFAULT_ROOM_BASE_PRICES[room.type as RoomType] || 0
       const price = room.customPrice ?? base
       return sum + price * room.quantity
     }, 0)

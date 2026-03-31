@@ -1,8 +1,9 @@
 import { useBudgetStore, LANAI_PRICES, type TierType, type RoomType, DEFAULT_ROOM_BASE_PRICES } from '../store/useBudgetStore'
 import { formatCurrency } from '../lib/utils'
+import { ContractTemplate } from './contracts/ContractTemplate'
 
-export function PrintLayout({ mode }: { mode: 'client' | 'internal' | null }) {
-  const { rooms, lanai, commissions, globalSettings } = useBudgetStore()
+export function PrintLayout({ mode }: { mode: 'client' | 'internal' | 'contract' | null }) {
+  const { rooms, lanai, commissions, globalSettings, currentContractData } = useBudgetStore()
   if (!mode) return null
 
   const calculateRoomValue = (type: RoomType, tier: TierType) => {
@@ -53,6 +54,10 @@ export function PrintLayout({ mode }: { mode: 'client' | 'internal' | null }) {
   const corretorValue = commissions.corretor.enabled ? (sellPrice * rates.corretor) / 100 : 0
   const tatiValue = commissions.tati.enabled ? (sellPrice * rates.tati) / 100 : 0
   const indicacaoValue = commissions.indicacao.enabled ? (sellPrice * rates.indicacao) / 100 : 0
+
+  if (mode === 'contract') {
+    return <ContractTemplate clientData={currentContractData} sellPrice={sellPrice} />
+  }
 
   return (
     <div className="hidden print:block w-full text-slate-900 bg-white min-h-screen p-8 absolute top-0 left-0 z-50">

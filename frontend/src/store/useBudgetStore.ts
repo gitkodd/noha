@@ -81,7 +81,13 @@ export interface BudgetState {
   lanai: LanaiOptions;
   commissions: CommissionSettings;
   showHistory: boolean;
-  printMode: 'client' | 'internal' | null;
+  printMode: 'client' | 'internal' | 'contract' | null;
+  currentContractData: any | null;
+  // Lead Data
+  clientName: string;
+  clientEmail: string;
+  setClientName: (name: string) => void;
+  setClientEmail: (email: string) => void;
   
   // Actions
   addRoom: (type: RoomType, id?: string) => void;
@@ -91,9 +97,13 @@ export interface BudgetState {
   updateLanaiPrice: (item: keyof LanaiOptions, price: number | null) => void;
   updateCommission: (key: keyof CommissionSettings, enabled?: boolean) => void;
   toggleHistory: () => void;
-  setPrintMode: (mode: 'client' | 'internal' | null) => void;
+  setPrintMode: (mode: 'client' | 'internal' | 'contract' | null) => void;
+  setCurrentContractData: (data: any) => void;
+  editingProjectId: string | null;
+  setEditingProjectId: (id: string | null) => void;
   loadState: (state: Partial<BudgetState>) => void;
   updateGlobalSettings: (updates: Partial<GlobalSettings>) => void;
+  resetBudget: () => void;
 }
 
 export const useBudgetStore = create<BudgetState>()(
@@ -133,21 +143,29 @@ export const useBudgetStore = create<BudgetState>()(
         ingrid: { enabled: true },
         corretor: { enabled: true },
         tati: { enabled: true },
-        indicacao: { enabled: false },
+        indicacao: { enabled: true },
       },
-      showHistory: true,
+      showHistory: false,
       printMode: null,
+      currentContractData: null as any,
+      clientName: '',
+      clientEmail: '',
+      editingProjectId: null,
+
+      setEditingProjectId: (id) => set({ editingProjectId: id }),
+      setClientName: (name: string) => set({ clientName: name }),
+      setClientEmail: (email: string) => set({ clientEmail: email }),
 
       addRoom: (type, id) => set((state) => ({
-        rooms: [...state.rooms, { id: id || crypto.randomUUID(), type, tier: 'intermediario', quantity: 1 }]
+        rooms: [...state.rooms, { id: id || Math.random().toString(36).substr(2, 9), type, tier: 'basic', quantity: 1 }]
       })),
       
       updateRoom: (id, updates) => set((state) => ({
-        rooms: state.rooms.map(r => r.id === id ? { ...r, ...updates } : r)
+        rooms: state.rooms.map((r) => (r.id === id ? { ...r, ...updates } : r))
       })),
 
       removeRoom: (id) => set((state) => ({
-        rooms: state.rooms.filter(r => r.id !== id)
+        rooms: state.rooms.filter((r) => r.id !== id)
       })),
 
       toggleLanai: (item) => set((state) => ({
@@ -155,36 +173,44 @@ export const useBudgetStore = create<BudgetState>()(
       })),
 
       updateLanaiPrice: (item, price) => set((state) => ({
-        lanai: { ...state.lanai, [item]: price }
+        lanai: { ...state.lanai, [`${item}CustomPrice`]: price }
       })),
 
       updateCommission: (key, enabled) => set((state) => ({
-        commissions: {
-          ...state.commissions,
-          [key]: {
-            ...state.commissions[key],
-            enabled: enabled !== undefined ? enabled : state.commissions[key].enabled,
-          }
-        }
+        commissions: { ...state.commissions, [key]: { enabled: enabled !== undefined ? enabled : !state.commissions[key].enabled } }
       })),
 
-      toggleHistory: () => set((state) => ({
-        showHistory: !state.showHistory
-      })),
+      toggleHistory: () => set((state) => ({ showHistory: !state.showHistory })),
 
       setPrintMode: (mode) => set({ printMode: mode }),
 
-      loadState: (newState) => set((state) => ({
-        ...state,
-        ...newState
-      })),
+      setCurrentContractData: (data: any) => set({ currentContractData: data }),
+
+      loadState: (newState) => set((state) => ({ ...state, ...newState })),
 
       updateGlobalSettings: (updates) => set((state) => ({
         globalSettings: { ...state.globalSettings, ...updates }
       })),
+
+      resetBudget: () => set({
+        rooms: [],
+        lanai: {
+          telao: false,
+          summerKitchen: false,
+          telaPrivacidade: false,
+          telaoCustomPrice: null,
+          summerKitchenCustomPrice: null,
+          telaPrivacidadeCustomPrice: null,
+        },
+        clientName: '',
+        clientEmail: '',
+        editingProjectId: null,
+        currentContractData: null,
+        printMode: null
+      }),
     }),
     {
-      name: 'noha-budget-storage', // saves to local storage
+      name: 'noha-budget-storage',
     }
   )
 )

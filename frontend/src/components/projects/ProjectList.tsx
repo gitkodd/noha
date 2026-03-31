@@ -39,6 +39,7 @@ export function ProjectList() {
   const selectedProject = selectedProjectId ? getProjectById(selectedProjectId) : null;
 
   const filteredProjects = projects.filter(p => 
+    p.status !== 'draft' &&
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -55,16 +56,15 @@ export function ProjectList() {
     return <ProjectDetailView project={selectedProject} onBack={() => setSelectedProject(null)} />;
   }
 
-
   return (
     <div className="space-y-8">
       {/* Header com Stats integradas */}
       <div className="flex flex-col gap-1">
         <div className="flex items-end justify-between gap-4">
-          <h2 className="text-3xl font-black tracking-tight text-slate-900">Central de Projetos</h2>
+          <h2 className="text-3xl font-black tracking-tight text-slate-900">Histórico de Execução</h2>
           <div className="flex items-center gap-6 pb-1">
             <div className="text-right">
-              <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Total</p>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">Total Projetos</p>
               <p className="text-xl font-black text-slate-900">{stats.totalProjects}</p>
             </div>
             <div className="w-px h-8 bg-slate-200" />
@@ -76,7 +76,7 @@ export function ProjectList() {
             </div>
           </div>
         </div>
-        <p className="text-slate-500">Dados históricos integrados da Noha 2.0</p>
+        <p className="text-slate-500 text-sm">Dados consolidados de projetos entregues e verificados.</p>
       </div>
 
       {/* Busca */}
@@ -84,14 +84,14 @@ export function ProjectList() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input 
           type="text"
-          placeholder="Buscar projeto por nome..."
+          placeholder="Buscar projeto histórico..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-white border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm font-medium"
         />
       </div>
 
-      {/* Grid de Projetos — 2 colunas: mais equilibrado independente do número de projetos */}
+      {/* Grid de Projetos Históricos */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {filteredProjects.map((project) => {
           const deviation = ((project.totalActual / project.totalPrice) - 1) * 100;
@@ -164,7 +164,7 @@ export function ProjectList() {
 function ProjectDetailView({ project, onBack }: { project: Project, onBack: () => void }) {
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   
-  const selectedRoom = selectedRoomId ? project.rooms.find(r => r.id === selectedRoomId) : project.rooms[0];
+  const selectedRoom = selectedRoomId ? project.rooms.find((r: any) => r.id === selectedRoomId) : project.rooms[0];
 
   return (
     <div className="space-y-8 max-w-[1400px] mx-auto animate-in fade-in slide-in-from-left-4 duration-500">

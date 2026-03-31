@@ -6,7 +6,7 @@ import { DNADrawer } from './intelligence/DNADrawer'
 import { Dna } from 'lucide-react'
 
 export function SummaryPanel() {
-  const { rooms, lanai, commissions, globalSettings } = useBudgetStore()
+  const { rooms, lanai, commissions, globalSettings, resetBudget } = useBudgetStore()
   const [showDNA, setShowDNA] = useState(false)
   const rates = globalSettings.commissionRates || { markup: 40, ingrid: 10, corretor: 10, tati: 2, indicacao: 5 }
 
@@ -202,6 +202,20 @@ export function SummaryPanel() {
               </div>
             </div>
             <span className="text-white/30 group-hover:text-white/60 text-xs transition-colors">→</span>
+          </button>
+        </div>
+
+        {/* Botão Novo Orçamento */}
+        <div className="pt-2">
+          <button
+            onClick={() => {
+              if (window.confirm('Tem certeza que deseja iniciar um novo orçamento? Todos os dados atuais serão perdidos.')) {
+                resetBudget();
+              }
+            }}
+            className="w-full py-3 rounded-xl border border-white/10 hover:bg-white/5 text-white/40 hover:text-white/80 text-[10px] font-black uppercase tracking-[0.2em] transition-all"
+          >
+            Iniciar Novo Orçamento
           </button>
         </div>
       </CardContent>

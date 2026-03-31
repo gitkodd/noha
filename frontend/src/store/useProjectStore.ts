@@ -26,6 +26,15 @@ export interface ProjectRoom {
 export interface Project {
   id: string;
   name: string;
+  clientName?: string;
+  clientEmail?: string;
+  passportNumber?: string;
+  clientAddress?: string;
+  vacationHomeAddress?: string;
+  status: 'draft' | 'sent' | 'approved' | 'in_progress' | 'completed';
+  contractUrl?: string;
+  installmentDates?: Record<string, string>;
+  budgetData?: any;
   rooms: ProjectRoom[];
   totalPrice: number;    // alias para budget
   totalActual: number;   // 0 quando null (Lilian), facilita UI
@@ -49,6 +58,8 @@ interface ProjectState {
   setSelectedProject: (id: string | null) => void;
   getProjectById: (id: string) => Project | undefined;
   fetchProjects: () => Promise<void>;
+  createProject: (data: Partial<Project>) => Promise<string | null>;
+  updateProject: (id: string, data: Partial<Project>) => Promise<boolean>;
   getGlobalStats: () => {
     totalProjects: number;
     avgAccuracy: number;
@@ -86,18 +97,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const mappedProjects: Project[] = (data || []).map(p => ({
         id: p.id,
         name: p.title,
-        totalPrice: p.budget,
-        totalActual: p.actual,
-        coverage: p.coverage,
-        deviationReliable: p.deviation_reliable,
-        roomCount: p.room_count,
-        thematicCount: p.thematic_count,
-        adult_count: p.adult_count, // Usando Snake case se necessário ou o mapeado
-        adultCount: p.adult_count,
-        loftCount: p.loft_count,
-        gameRoomCount: p.game_room_count,
-        hasLanai: p.has_lanai,
-        date: new Date(p.created_at).getFullYear().toString(),
+        clientName: p.client_name,
+        clientEmail: p.client_email,
+        passportNumber: p.passport_number,
+        clientAddress: p.client_address,
+        vacationHomeAddress: p.vacation_home_address,
+        status: p.status || 'draft',
+        contractUrl: p.contract_url,
+        installmentDates: p.installment_dates,
+        budgetData: p.budget_data,
+        totalPrice: Number(p.budget) || 0,
+        totalActual: Number(p.actual) || 0,
+        coverage: p.coverage || 0,
+        deviationReliable: p.deviation_reliable || false,
+        roomCount: p.room_count || 0,
+        thematicCount: p.thematic_count || 0,
+        adultCount: p.adult_count || 0,
+        loftCount: p.loft_count || 0,
+        gameRoomCount: p.game_room_count || 0,
+        hasLanai: p.has_lanai || false,
+        date: p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '',
         rooms: (p.rooms || []).map((r: any) => ({
           id: r.id,
           name: r.name,
@@ -126,8 +145,76 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }
   },
 
+  createProject: async (data) => {
+    try {
+      const { data: newProject, error } = await supabase
+        .from('projects')
+        .insert([{
+          title: data.name,
+          client_name: data.clientName,
+          client_email: data.clientEmail,
+          status: data.status || 'draft',
+          budget: data.totalPrice,
+          actual: data.totalActual || 0,
+          budget_data: data.budgetData,
+          room_count: data.roomCount,
+          thematic_count: data.thematicCount,
+          adult_count: data.adultCount,
+          loft_count: data.loftCount,
+          game_room_count: data.gameRoomCount,
+          has_lanai: data.hasLanai,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      await get().fetchProjects();
+      return newProject.id;
+    } catch (error) {
+      console.error('Erro ao criar projeto:', error);
+      return null;
+    }
+  },
+
+  updateProject: async (id, data) => {
+    try {
+      const updateData: any = {};
+      if (data.clientName) updateData.client_name = data.clientName;
+      if (data.clientEmail) updateData.client_email = data.clientEmail;
+      if (data.passportNumber) updateData.passport_number = data.passportNumber;
+      if (data.clientAddress) updateData.client_address = data.clientAddress;
+      if (data.vacationHomeAddress) updateData.vacation_home_address = data.vacationHomeAddress;
+      if (data.status) updateData.status = data.status;
+      if (data.installmentDates) updateData.installment_dates = data.installmentDates;
+      if (data.budgetData) updateData.budget_data = data.budgetData;
+      
+      // Update summary fields for the card
+      if (data.name) updateData.title = data.name;
+      if (data.totalPrice !== undefined) updateData.budget = data.totalPrice;
+      if (data.roomCount !== undefined) updateData.room_count = data.roomCount;
+      if (data.thematicCount !== undefined) updateData.thematic_count = data.thematicCount;
+      if (data.adultCount !== undefined) updateData.adult_count = data.adultCount;
+      if (data.loftCount !== undefined) updateData.loft_count = data.loftCount;
+      if (data.gameRoomCount !== undefined) updateData.game_room_count = data.gameRoomCount;
+      if (data.hasLanai !== undefined) updateData.has_lanai = data.hasLanai;
+
+      const { error } = await supabase
+        .from('projects')
+        .update(updateData)
+        .eq('id', id);
+
+      if (error) throw error;
+      await get().fetchProjects();
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar projeto:', error);
+      return false;
+    }
+  },
+
   getGlobalStats: () => {
-    const projects = get().projects;
+    const projects = get().projects.filter(p => p.status !== 'draft');
     const reliable  = projects.filter(p => p.deviationReliable);
     const totalProjects = projects.length;
     const totalPrice    = projects.reduce((sum, p) => sum + p.totalPrice, 0);
@@ -141,4 +228,3 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     return { totalProjects, avgAccuracy, totalPrice, totalActual };
   }
 }));
-
