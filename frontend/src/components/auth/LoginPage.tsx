@@ -7,7 +7,6 @@ import gsap from 'gsap'
 export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const { setAuth } = useAuthStore()
@@ -32,18 +31,9 @@ export function LoginPage() {
     setError(null)
 
     try {
-      if (isSignUp) {
-        const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
-        if (signUpError) throw signUpError
-        if (data.user) {
-          alert('Cadastro realizado! Se o e-mail de confirmação estiver ativado, verifique sua caixa de entrada.')
-          setIsSignUp(false)
-        }
-      } else {
-        const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
-        if (signInError) throw signInError
-        setAuth(data.user, data.session)
-      }
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) throw signInError
+      setAuth(data.user, data.session)
     } catch (err: any) {
       setError(err.message || 'Erro na autenticação')
     } finally {
@@ -71,7 +61,7 @@ export function LoginPage() {
             </div>
             <h1 className="text-3xl font-black text-foreground tracking-tighter">NOHA</h1>
             <p className="text-sm text-text-muted font-medium mt-1">
-              {isSignUp ? 'Crie sua conta exclusiva' : 'Acesse seu Portal Cloud'}
+              Acesse seu Portal Cloud
             </p>
           </div>
 
@@ -123,16 +113,15 @@ export function LoginPage() {
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
-                  {isSignUp ? 'Cadastrar Agora' : 'Entrar no Sistema'}
-                  {!isSignUp && <ArrowRight className="w-5 h-5" />}
+                  Entrar no Sistema
+                  <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-8 text-center text-xs font-bold uppercase tracking-wider text-text-muted/40 hover:text-text-muted transition-colors cursor-pointer"
-               onClick={() => setIsSignUp(!isSignUp)}>
-            {isSignUp ? 'Já tenho acesso' : 'Quero acesso exclusivo'}
+          <div className="mt-8 text-center text-[10px] font-bold uppercase tracking-widest text-text-muted/40">
+            Acesso Restrito ao Administrador
           </div>
         </div>
 
